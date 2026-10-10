@@ -55,6 +55,10 @@ export function MossModel({ visual, level, health, reducedMotion, onPoke, headRe
   const zzz = useRef<THREE.Group>(null)
   const poke = useRef(0)
   const nextBlink = useRef(2)
+  // Accumulated animation phase. Integrating speed (instead of sin(time * speed)) keeps motion
+  // continuous while speed eases between states; otherwise a large elapsed time turns every
+  // speed change into a huge phase jump and Moss visibly shakes.
+  const phase = useRef(0)
   const live = useRef<Live>({ profile: { ...VISUAL_PROFILES[visual] }, blink: 0, time: 0 })
   const target = VISUAL_PROFILES[visual]
   const tier = level >= 30 ? 4 : level >= 20 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0
@@ -79,20 +83,22 @@ export function MossModel({ visual, level, health, reducedMotion, onPoke, headRe
     live.current.blink = Math.max(0, live.current.blink - delta * 9)
 
     const motion = reducedMotion ? 0.25 : 1
+    phase.current += delta * p.speed
+    const ph = phase.current
     poke.current = Math.max(0, poke.current - delta * 2.5)
     const pokeHop = Math.sin(poke.current * Math.PI) * 0.25
 
     if (root.current && body.current) {
-      const hop = Math.abs(Math.sin(t * p.speed * 3)) * p.hop * motion + pokeHop
-      body.current.position.y = Math.max(0, Math.sin(t * p.speed * 2) * p.bob * motion) + hop
+      const hop = Math.abs(Math.sin(ph * 3)) * p.hop * motion + pokeHop
+      body.current.position.y = Math.max(0, Math.sin(ph * 2) * p.bob * motion) + hop
       // Squash from the feet: breathing, plus a landing squash for hoppy states.
-      const breathe = 1 + Math.sin(t * p.speed * 2) * 0.02 * motion
+      const breathe = 1 + Math.sin(ph * 2) * 0.02 * motion
       const squash = 1 - Math.max(0, 0.1 - hop) * (p.hop > 0.05 ? 0.6 : 0)
       const sy = squash * breathe
       body.current.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy))
       // Face the camera by default; glance toward the window when Moss wants to go outside.
       root.current.rotation.y = FACE_CAMERA_YAW + THREE.MathUtils.lerp(0, -1.1, p.look) + Math.sin(t * 0.4) * 0.05 * motion
-      body.current.rotation.z = Math.sin(t * p.speed * 4) * p.wiggle * motion - p.lean * 0.08
+      body.current.rotation.z = Math.sin(ph * 4) * p.wiggle * motion - p.lean * 0.08
       body.current.rotation.x = p.lean * 0.1 - p.look * 0.08
     }
 

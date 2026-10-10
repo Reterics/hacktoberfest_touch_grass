@@ -1,4 +1,4 @@
-import type { Stats, StatKey, TimerPreset, UnlockId } from '@moss/shared'
+import type { AchievementId, Stats, StatKey, TimerPreset, UnlockId } from '@moss/shared'
 
 /*
  * The single balance table for Moss.
@@ -94,4 +94,47 @@ export const UNLOCK_RULES: UnlockRule[] = [
   { id: 'sun_crystal', label: 'Moss stored some sunlight', isUnlocked: (c) => (c.sky ?? 0) >= 1 },
   { id: 'desk_plant', label: 'The desk plant grew bigger', isUnlocked: (_c, n) => n >= 10 },
   { id: 'ecosystem', label: 'A lush miniature ecosystem', isUnlocked: (_c, n) => n >= 50 },
+]
+
+export interface AchievementRule {
+  id: AchievementId
+  title: string
+  description: string
+  isEarned: (counts: Record<string, number>, questsCompleted: number) => boolean
+}
+
+const PLANT_QUESTS = ['tree', 'grass', 'flower', 'leaf']
+
+/** Achievements are deterministic milestones; the art lives in apps/web/public/assets/achievements. */
+export const ACHIEVEMENT_RULES: AchievementRule[] = [
+  {
+    id: 'touched_grass',
+    title: 'Actually Touched Grass',
+    description: 'Completed your first grass quest.',
+    isEarned: (c) => (c.grass ?? 0) >= 1,
+  },
+  {
+    id: 'forest_friend',
+    title: 'Forest Friend',
+    description: 'Completed 10 tree quests.',
+    isEarned: (c) => (c.tree ?? 0) >= 10,
+  },
+  {
+    id: 'photosynthesis',
+    title: 'Photosynthesis',
+    description: 'Completed 7 sunlight quests.',
+    isEarned: (c) => (c.sky ?? 0) >= 7,
+  },
+  {
+    id: 'chlorophyll_addict',
+    title: 'Chlorophyll Addict',
+    description: 'Completed 50 plant quests.',
+    isEarned: (c) => PLANT_QUESTS.reduce((n, id) => n + (c[id] ?? 0), 0) >= 50,
+  },
+  {
+    id: 'outdoor_engineer',
+    title: 'Outdoor Engineer',
+    description: 'Took 100 breaks outside.',
+    isEarned: (_c, n) => n >= 100,
+  },
 ]

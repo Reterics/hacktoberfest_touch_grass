@@ -260,3 +260,27 @@ describe('restart recovery', () => {
     expect(recoverAfterRestart(s)).toBe(s)
   })
 })
+
+describe('achievements', () => {
+  it('awards Actually Touched Grass for the first grass quest, once', () => {
+    let s = createInitialState()
+    s = { ...s, creature: { ...s.creature, stats: { ...s.creature.stats, bathroom: 1 } } }
+    const brk = toBreak(s)
+    expect(brk.quest?.templateId).toBe('grass')
+    const done = completeQuest(recordValidationFailure(brk, 'x', T0).state, T0, { manual: true })
+    expect(done.state.creature.achievements).toEqual(['touched_grass'])
+    expect(done.state.lastResult?.newAchievements).toEqual(['touched_grass'])
+    expect(done.events).toContainEqual({ kind: 'achievement', at: T0, achievement: 'touched_grass' })
+
+    const again = { ...done.state, creature: { ...done.state.creature, stats: { ...done.state.creature.stats, bathroom: 1 } } }
+    const brk2 = toBreak(again, T0 + 60 * MIN)
+    const done2 = completeQuest(recordValidationFailure(brk2, 'x', T0).state, T0, { manual: true })
+    expect(done2.state.lastResult?.newAchievements).toEqual([])
+  })
+
+  it('fills achievements for saves from before they existed', () => {
+    const s = createInitialState()
+    const old = { ...s, creature: { ...s.creature, achievements: undefined as unknown as [] } }
+    expect(recoverAfterRestart(old).creature.achievements).toEqual([])
+  })
+})

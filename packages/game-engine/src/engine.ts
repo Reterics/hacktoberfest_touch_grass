@@ -12,8 +12,10 @@ import {
   type Stats,
   type TimerPreset,
   type UnlockId,
+  type AchievementId,
 } from '@moss/shared'
 import {
+  ACHIEVEMENT_RULES,
   DEFAULT_PRESET_ID,
   FOCUS_DRAIN_PER_45_MIN,
   FOCUS_SCALE_MAX,
@@ -58,6 +60,7 @@ export function createInitialState(): GameState {
       totalXp: 0,
       stats: { ...INITIAL_STATS },
       unlocks: [],
+      achievements: [],
       skippedBreaksInRow: 0,
       streakDays: 0,
       lastQuestDay: null,
@@ -446,7 +449,14 @@ export function completeQuest(
   const newUnlocks: UnlockId[] = UNLOCK_RULES.filter(
     (r) => !creature.unlocks.includes(r.id) && r.isUnlocked(questCounts, questsCompleted),
   ).map((r) => r.id)
-  creature = { ...creature, unlocks: [...creature.unlocks, ...newUnlocks] }
+  const newAchievements: AchievementId[] = ACHIEVEMENT_RULES.filter(
+    (r) => !creature.achievements.includes(r.id) && r.isEarned(questCounts, questsCompleted),
+  ).map((r) => r.id)
+  creature = {
+    ...creature,
+    unlocks: [...creature.unlocks, ...newUnlocks],
+    achievements: [...creature.achievements, ...newAchievements],
+  }
 
   const result: QuestResult = {
     questId: quest.id,
@@ -456,12 +466,14 @@ export function completeQuest(
     statChanges,
     leveledUp: xpResult.leveledUp,
     newUnlocks,
+    newAchievements,
     manual: opts.manual,
     at: now,
   }
   const events: GameEvent[] = [{ kind: 'quest_completed', at: now, result }]
   if (xpResult.leveledUp) events.push({ kind: 'level_up', at: now, level: creature.level })
   for (const unlock of newUnlocks) events.push({ kind: 'unlock', at: now, unlock })
+  for (const achievement of newAchievements) events.push({ kind: 'achievement', at: now, achievement })
 
   return {
     state: {
@@ -476,12 +488,14 @@ export function completeQuest(
 }
 
 /**
- * Repairs state loaded after a restart: a photo check that was in flight can never finish,
- * so treat it like a technical failure (retry or complete manually).
+ * Repairs state loaded after a restart: fills fields added in newer versions, and treats a photo
+ * check that was in flight as a technical failure (retry or complete manually).
  */
 export function recoverAfterRestart(state: GameState): GameState {
-  if (state.quest?.status !== 'validating') return state
-  return { ...state, quest: { ...state.quest, status: 'active', manualAllowed: true } }
+  let next = state
+  if (!Array.isArray(next.creature.achievements)) next = { ...next, creature: { ...next.creature, achievements: [] } }
+  if (next.quest?.status === 'validating') next = { ...next, quest: { ...next.quest, status: 'active', manualAllowed: true } }
+  return next
 }
 
 /** Sets a reaction line, e.g. from the AI after a quest completes. */

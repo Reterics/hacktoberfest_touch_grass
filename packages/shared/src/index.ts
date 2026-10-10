@@ -85,6 +85,8 @@ export interface TimerState {
 
 export type UnlockId = 'tiny_tree' | 'grass_patch' | 'flower_pot' | 'sun_crystal' | 'desk_plant' | 'ecosystem'
 
+export type AchievementId = 'touched_grass' | 'forest_friend' | 'photosynthesis' | 'chlorophyll_addict' | 'outdoor_engineer'
+
 export interface CreatureState {
   name: string
   level: number
@@ -93,6 +95,7 @@ export interface CreatureState {
   totalXp: number
   stats: Stats
   unlocks: UnlockId[]
+  achievements: AchievementId[]
   skippedBreaksInRow: number
   /** Consecutive local days with at least one completed quest. */
   streakDays: number
@@ -142,6 +145,7 @@ export interface QuestResult {
   statChanges: StatModifier[]
   leveledUp: boolean
   newUnlocks: UnlockId[]
+  newAchievements: AchievementId[]
   manual: boolean
   at: number
 }
@@ -159,6 +163,7 @@ export type GameEvent =
   | { kind: 'quest_completed'; at: number; result: QuestResult }
   | { kind: 'level_up'; at: number; level: number }
   | { kind: 'unlock'; at: number; unlock: UnlockId }
+  | { kind: 'achievement'; at: number; achievement: AchievementId }
 
 export interface PairingInfo {
   url: string

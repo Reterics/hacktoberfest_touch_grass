@@ -7,6 +7,7 @@ export const DEMO_CLIPS = [
   'moss-find-tree',
   'moss-acceptable-tree',
   'moss-back-to-work',
+  'narrator-intro',
   'narrator-open-innovation',
   'sfx-pop',
   'sfx-shutter',

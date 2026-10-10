@@ -20,6 +20,8 @@ export interface SceneProps {
   away: boolean
   reducedMotion: boolean
   onPoke: () => void
+  /** Opening shot of the demo: a wide, dim, late-afternoon view of the desk. */
+  wide?: boolean
 }
 
 const WINDOW_POS = new THREE.Vector3(-1.5, 2.0, -2.4)
@@ -37,15 +39,15 @@ export function Scene(props: SceneProps) {
   )
 }
 
-function SceneContents({ visual, phase, level, health, unlocks, dialogue, rewardKey, reducedMotion, onPoke, away }: SceneProps) {
+function SceneContents({ visual, phase, level, health, unlocks, dialogue, rewardKey, reducedMotion, onPoke, away, wide = false }: SceneProps) {
   const head = useRef<THREE.Object3D>(null)
   const has = (id: UnlockId) => unlocks.includes(id)
   return (
     <>
       <color attach="background" args={['#2a3322']} />
       <fog attach="fog" args={['#2a3322', 10, 22]} />
-      <Lights phase={phase} visual={visual} />
-      <CameraRig phase={phase} visual={visual} reducedMotion={reducedMotion} />
+      <Lights phase={phase} visual={visual} wide={wide} />
+      <CameraRig phase={phase} visual={visual} reducedMotion={reducedMotion} wide={wide} />
 
       <Room phase={phase} reducedMotion={reducedMotion} />
       <Desk />
@@ -75,7 +77,7 @@ function SceneContents({ visual, phase, level, health, unlocks, dialogue, reward
 
 // ---- lighting & camera ------------------------------------------------------
 
-function Lights({ phase, visual }: { phase: TimerPhase; visual: MossVisualState }) {
+function Lights({ phase, visual, wide }: { phase: TimerPhase; visual: MossVisualState; wide: boolean }) {
   const sun = useRef<THREE.DirectionalLight>(null)
   const hemi = useRef<THREE.HemisphereLight>(null)
   const lamp = useRef<THREE.PointLight>(null)
@@ -85,12 +87,13 @@ function Lights({ phase, visual }: { phase: TimerPhase; visual: MossVisualState 
   })()
 
   const target = useMemo(() => {
+    if (wide) return { sun: 1.1, sunColor: '#ffb27a', hemi: 0.55, lamp: 1.7 }
     if (visual === 'quest_success' || visual === 'level_up') return { sun: 3.8, sunColor: '#ffd59a', hemi: 1.3, lamp: 0.8 }
     if (phase === 'break') return { sun: 3.2, sunColor: '#ffe2b0', hemi: 1.2, lamp: 0.6 }
     if (night) return { sun: 0.6, sunColor: '#9fb6ff', hemi: 0.5, lamp: 2.6 }
     if (phase === 'focus') return { sun: 2.2, sunColor: '#fff1dc', hemi: 0.95, lamp: 1.1 }
     return { sun: 2.6, sunColor: '#fff0d8', hemi: 1.05, lamp: 0.9 }
-  }, [phase, visual, night])
+  }, [phase, visual, night, wide])
   const sunColor = useMemo(() => new THREE.Color(), [])
 
   useFrame((_, delta) => {
@@ -124,22 +127,28 @@ function Lights({ phase, visual }: { phase: TimerPhase; visual: MossVisualState 
   )
 }
 
-function CameraRig({ phase, visual, reducedMotion }: { phase: TimerPhase; visual: MossVisualState; reducedMotion: boolean }) {
+function CameraRig({ phase, visual, reducedMotion, wide }: { phase: TimerPhase; visual: MossVisualState; reducedMotion: boolean; wide: boolean }) {
   const { camera, pointer } = useThree()
   const look = useMemo(() => new THREE.Vector3(-0.1, 1.05, 0), [])
   const base = useMemo(() => new THREE.Vector3(3.4, 2.7, 5.4), [])
   const desired = useMemo(() => new THREE.Vector3(), [])
+  const wideBase = useMemo(() => new THREE.Vector3(4.1, 3.25, 6.5), [])
+  // The push-in out of the wide shot is slow and cinematic, then normal follow speed resumes.
+  const slowUntil = useRef(0)
 
   useFrame((state, delta) => {
     // Break / celebration: push gently toward Moss.
     const push = visual === 'quest_success' || visual === 'level_up' ? 0.72 : phase === 'break' ? 0.82 : 1
-    desired.copy(base).multiplyScalar(push)
+    if (wide) slowUntil.current = state.clock.elapsedTime + 5
+    if (wide) desired.copy(wideBase)
+    else desired.copy(base).multiplyScalar(push)
     if (!reducedMotion) {
       desired.x += pointer.x * 0.35
       desired.y += pointer.y * 0.2
       if (visual === 'quest_success') desired.x += Math.sin(state.clock.elapsedTime * 1.4) * 0.25
     }
-    camera.position.lerp(desired, 1 - Math.exp(-delta * (reducedMotion ? 6 : 1.8)))
+    const rate = reducedMotion ? 6 : !wide && state.clock.elapsedTime < slowUntil.current ? 0.55 : 1.8
+    camera.position.lerp(desired, 1 - Math.exp(-delta * rate))
     camera.lookAt(look)
   })
   return null

@@ -76,6 +76,7 @@ export default function Desktop() {
           rewardKey={rewardKey}
           away={away}
           reducedMotion={reducedMotion}
+          wide={!!demo?.wide && (demo.stage === 'title' || demo.stage === 'intro')}
           onPoke={() => {
             setPokeLine(pokeLines[Math.floor(Math.random() * pokeLines.length)]!)
             setTimeout(() => setPokeLine(null), 2500)
@@ -87,7 +88,7 @@ export default function Desktop() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(10,14,8,0.55)_100%)]" />
 
       {/* In the demo the HUD is display-only: nothing may reach a real server. */}
-      <div className={demo ? 'pointer-events-none' : 'contents'}>
+      <div className={demo ? `pointer-events-none transition-opacity duration-1000 ${demo.stage === 'intro' ? 'opacity-0' : ''}` : 'contents'}>
         <TopLeft state={state} />
         <TopRight ai={ai} phoneConnected={snapshot.phoneConnected} connection={connection} away={away} />
         {ai.state !== 'ready' && ai.state !== 'checking' && <SetupBanner ai={ai} />}

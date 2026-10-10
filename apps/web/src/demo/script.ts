@@ -37,6 +37,16 @@ export const LINES = {
 /** Quest wording from the demo script; requirements and rewards stay the engine's. */
 export const QUEST_WORDING = { title: 'Find me a tree 🌳', description: 'Find a living tree and show it to Moss.' }
 
+/** Opening narration (the problem), with each sentence's start time in the voiced clip. */
+export const INTRO: { at: number; text: string }[] = [
+  { at: 0, text: 'We spend most of our day in front of screens.' },
+  { at: 3.4, text: 'Deep work matters, but so do the moments when we stand up, look away and step outside.' },
+  { at: 11.35, text: "When we're focused, those are the first moments we skip." },
+  { at: 16.2, text: 'So we built Moss.' },
+]
+/** The idea, shown as a card while the narrator says it. */
+export const TAGLINE = { at: 18.6, text: 'Moss is an AI companion that works with you, and occasionally makes you leave your desk.' }
+
 /** End-card narration, with each sentence's start time in the voiced clip (a breathing pause follows each sentence). */
 export const NARRATION: { at: number; text: string }[] = [
   { at: 0, text: 'Open innovation lets us combine what already exists to create what doesn’t.' },

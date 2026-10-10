@@ -4,7 +4,7 @@ import { PRESETS, type EngineResult } from '@moss/game-engine'
 import type { GameConnection } from '../lib/useGame.ts'
 import type { MossVisualState } from '../lib/visualState.ts'
 import { DemoAudio, type DemoClip } from './audio.ts'
-import { GEMMA_VERDICT, NARRATION, backToWork, createDemoState, endFocus, photoChecked, photoTaken, sayLine } from './script.ts'
+import { GEMMA_VERDICT, INTRO, NARRATION, TAGLINE, backToWork, createDemoState, endFocus, photoChecked, photoTaken, sayLine } from './script.ts'
 
 /** /?demo=1 plays the scripted "Moss Needs a Tree" scene instead of connecting to the server. */
 export const DEMO = new URLSearchParams(window.location.search).has('demo')
@@ -12,7 +12,12 @@ export const DEMO = new URLSearchParams(window.location.search).has('demo')
 export type PhoneScreen = 'quest' | 'camera' | 'flash' | 'checking' | 'found'
 
 export interface DemoView {
-  stage: 'title' | 'running' | 'end'
+  stage: 'title' | 'intro' | 'running' | 'end'
+  /** Opening shot: wide and dim, before the camera pushes in on Moss. */
+  wide: boolean
+  /** How many intro lines have been spoken (the latest one is shown as a subtitle). */
+  introLine: number
+  tagline: boolean
   phone: PhoneScreen | null
   caption: string | null
   visualOverride: MossVisualState | null
@@ -26,7 +31,11 @@ export interface DemoView {
 
 /** How long the phone shows "looking…": the recorded Gemma latency, kept readable. */
 const CHECK_SECONDS = Math.min(2.5, Math.max(1.2, GEMMA_VERDICT.latencyMs / 1000))
-const NARRATOR_AT = 42.8
+/** The opening narration (the problem, then the idea). The game starts once the tagline is on screen. */
+const INTRO_DELAY = 0.4
+const INTRO_SECONDS = INTRO_DELAY + TAGLINE.at + 1
+/** The end card fades in over 1 s; the narrator starts once it has settled. */
+const NARRATOR_AT = 43.3
 const NARRATOR_SECONDS = 29.3
 
 /**
@@ -63,12 +72,29 @@ export function useDemoGame(): GameConnection & { demo: DemoView } {
       for (const e of result.events) for (const fn of listeners.current) fn(e)
     }
     const patch = (p: Partial<Omit<DemoView, 'start'>>) => setView((v) => ({ ...v, ...p }))
-    const at = (seconds: number, fn: () => void) => timers.current.push(setTimeout(fn, seconds * 1000))
+    const atIntro = (seconds: number, fn: () => void) => timers.current.push(setTimeout(fn, seconds * 1000))
+    // Gameplay cues are timed from the end of the intro.
+    const at = (seconds: number, fn: () => void) => atIntro(INTRO_SECONDS + seconds, fn)
     const now = () => Date.now()
 
-    commit(createDemoState(now()), false)
-    setView({ ...INITIAL_VIEW, stage: 'running' })
-    sound.startMusic()
+    // Problem → idea: the narrator over a wide, dim shot of Moss working beside the laptop.
+    const opening = createDemoState(now() + INTRO_SECONDS * 1000)
+    commit({ ...opening, dialogue: null }, false)
+    setView({ ...INITIAL_VIEW, stage: 'intro', wide: true })
+    atIntro(INTRO_DELAY, () => play('narrator-intro'))
+    INTRO.forEach((line, i) => atIntro(INTRO_DELAY + line.at, () => patch({ introLine: i + 1 })))
+    // "So we built Moss": the camera pushes in and Moss looks up at the viewer.
+    atIntro(INTRO_DELAY + INTRO[INTRO.length - 1]!.at, () => {
+      patch({ wide: false, visualOverride: 'idle' })
+      sound.startMusic()
+    })
+    atIntro(INTRO_DELAY + TAGLINE.at, () => patch({ tagline: true }))
+    at(0, () => patch({ stage: 'running', visualOverride: null }))
+    // The tagline and Moss's speech bubble share the top of the screen, so the bubble waits.
+    at(4.5, () => {
+      patch({ tagline: false })
+      commit({ ...game.current.state, dialogue: opening.dialogue })
+    })
 
     // Work → interruption: the session ends and Moss's fronds droop.
     at(3, () => patch({ visualOverride: 'tired' }))
@@ -133,7 +159,7 @@ export function useDemoGame(): GameConnection & { demo: DemoView } {
     // End card.
     at(42, () => {
       patch({ stage: 'end' })
-      sound.music('duck')
+      sound.music('duck', 1.25)
     })
     at(NARRATOR_AT, () => play('narrator-open-innovation'))
     NARRATION.forEach((line, i) => at(NARRATOR_AT + line.at, () => patch({ narration: i + 1 })))
@@ -154,6 +180,9 @@ export function useDemoGame(): GameConnection & { demo: DemoView } {
 
 const INITIAL_VIEW: Omit<DemoView, 'start'> = {
   stage: 'title',
+  wide: true,
+  introLine: 0,
+  tagline: false,
   phone: null,
   caption: null,
   visualOverride: null,

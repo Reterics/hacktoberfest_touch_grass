@@ -27,7 +27,7 @@
   --animate-walk-in: walk-in 1.8s cubic-bezier(0.3, 0.1, 0.4, 1) both;
   --animate-phone-in: phone-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-camera-flash: camera-flash 0.35s ease-out both;
-  --animate-fade-in: fade-in 1.2s ease-out both;
+  --animate-fade-in: fade-in 1s ease-in-out both;
 
   @keyframes phone-in {
     from {

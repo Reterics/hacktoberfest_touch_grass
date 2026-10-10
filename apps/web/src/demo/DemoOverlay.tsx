@@ -2,7 +2,7 @@ import type { Quest } from '@moss/shared'
 import { MossClip } from '../components/MossMotion.tsx'
 import { SparkIcon } from '../components/icons.tsx'
 import type { DemoView, PhoneScreen } from './useDemoGame.ts'
-import { GEMMA_VERDICT, NARRATION } from './script.ts'
+import { GEMMA_VERDICT, INTRO, NARRATION, TAGLINE } from './script.ts'
 
 const ART = '/assets/demo'
 
@@ -12,6 +12,27 @@ export function DemoOverlay({ demo, quest }: { demo: DemoView; quest: Quest | nu
       {demo.stage === 'running' && (
         <div className="pointer-events-none absolute right-5 bottom-5 rounded-full bg-forest-950/60 px-3 py-1 text-[10px] font-semibold tracking-wide text-parchment/45">
           Demo replay · real game engine · recorded local Gemma verdict
+        </div>
+      )}
+      {demo.stage === 'intro' && (
+        // All subtitles share one spot and cross-fade, so nothing jumps between lines.
+        <div className="pointer-events-none absolute inset-x-0 bottom-[14%] grid place-items-center px-6">
+          {INTRO.map((line, i) => (
+            <p
+              key={line.text}
+              className={`col-start-1 row-start-1 max-w-3xl text-center font-display text-3xl leading-snug font-semibold text-parchment drop-shadow-[0_4px_18px_rgba(0,0,0,0.75)] ${reveal(demo.introLine === i + 1 && !demo.tagline)}`}
+            >
+              {line.text}
+            </p>
+          ))}
+        </div>
+      )}
+      {(demo.stage === 'intro' || demo.stage === 'running') && (
+        <div className="pointer-events-none absolute inset-x-0 top-[7%] flex justify-center px-6">
+          <div className={`parchment max-w-xl rounded-3xl px-7 py-4 text-center ${reveal(demo.tagline)}`}>
+            <div className="text-[11px] font-bold tracking-[0.25em] text-bark uppercase">Meet Moss</div>
+            <p className="mt-1 font-display text-2xl leading-snug font-semibold">{TAGLINE.text}</p>
+          </div>
         </div>
       )}
       {demo.phone && quest && <Phone screen={demo.phone} quest={quest} />}
@@ -122,18 +143,26 @@ const LINE_STYLE: Record<number, string> = {
   4: 'mt-1 text-lg text-parchment/70',
 }
 
+/**
+ * Every line is laid out from the start and only revealed, so the block never shifts as lines
+ * arrive; each one drifts up and comes into focus slowly.
+ */
+function reveal(shown: boolean): string {
+  return `transition-[opacity,transform,filter] duration-700 ease-out ${shown ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-1.5 blur-[1.5px]'}`
+}
+
 function EndCard({ demo }: { demo: DemoView }) {
-  const [headline, ...lines] = NARRATION.slice(0, demo.narration)
+  const [headline, ...lines] = NARRATION
   return (
     <div className="animate-fade-in absolute inset-0 z-40 bg-forest-950">
       <img src={`${ART}/end-card.webp`} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-r from-forest-950/95 via-forest-950/70 to-forest-950/10" />
       <div className="relative flex h-full max-w-2xl flex-col justify-center gap-4 px-6 sm:px-14">
         <div className="text-xs font-bold tracking-[0.3em] text-moss-300 uppercase">Open innovation</div>
-        {headline && <h2 className="animate-fade-up font-display text-4xl leading-tight font-semibold text-parchment sm:text-5xl">{headline.text}</h2>}
+        <h2 className={`font-display text-4xl leading-tight font-semibold text-parchment sm:text-5xl ${reveal(demo.narration >= 1)}`}>{headline!.text}</h2>
         <div className="flex flex-col gap-1.5 text-xl text-parchment/80">
           {lines.map((l, i) => (
-            <p key={l.text} className={`animate-fade-up ${LINE_STYLE[i] ?? ''}`}>
+            <p key={l.text} className={`${LINE_STYLE[i] ?? ''} ${reveal(demo.narration >= i + 2)}`}>
               {l.text}
             </p>
           ))}

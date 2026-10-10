@@ -8,13 +8,18 @@ import { VISUAL_PROFILES, useVisualState, type MossVisualState } from '../lib/vi
 import { prepareImage } from '../lib/image.ts'
 import { PhoneIcon, SparkIcon, STAT_LABEL, STAT_META } from '../components/icons.tsx'
 import { Scene } from './Scene.tsx'
+import { DEMO, useDemoGame, type DemoView } from '../demo/useDemoGame.ts'
+import { DemoOverlay } from '../demo/DemoOverlay.tsx'
+
+// /?demo=1 swaps the server connection for the scripted demo; the rest of the UI is unchanged.
+const useConnection: () => ReturnType<typeof useGame> & { demo?: DemoView } = DEMO ? useDemoGame : useGame
 
 export default function Desktop() {
-  const { snapshot, connection, now, onEvent } = useGame()
+  const { snapshot, connection, now, onEvent, demo } = useConnection()
   const reducedMotion = useReducedMotion()
   const derived = useVisualState(snapshot?.state, onEvent)
   // Design review: /?visual=tired forces a visual state.
-  const visual = forcedVisual ?? derived
+  const visual = forcedVisual ?? demo?.visualOverride ?? derived
   const [rewardKey, setRewardKey] = useState(0)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [rejection, setRejection] = useState<{ questId: string; reason: string; technical: boolean } | null>(null)
@@ -81,15 +86,19 @@ export default function Desktop() {
       {/* vignette for HUD legibility */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(10,14,8,0.55)_100%)]" />
 
-      <TopLeft state={state} />
-      <TopRight ai={ai} phoneConnected={snapshot.phoneConnected} connection={connection} away={away} />
-      {ai.state !== 'ready' && ai.state !== 'checking' && <SetupBanner ai={ai} />}
-      <Stats state={state} />
-      <TimerDock snapshot={snapshot} now={now} />
-      {state.quest && (state.quest.status !== 'skipped' && state.quest.status !== 'expired') && (
-        <QuestPanel snapshot={snapshot} quest={state.quest} now={now} rejection={rejection?.questId === state.quest.id ? rejection : null} />
-      )}
+      {/* In the demo the HUD is display-only: nothing may reach a real server. */}
+      <div className={demo ? 'pointer-events-none' : 'contents'}>
+        <TopLeft state={state} />
+        <TopRight ai={ai} phoneConnected={snapshot.phoneConnected} connection={connection} away={away} />
+        {ai.state !== 'ready' && ai.state !== 'checking' && <SetupBanner ai={ai} />}
+        <Stats state={state} />
+        <TimerDock snapshot={snapshot} now={now} highlight={!!demo?.pulse} />
+        {state.quest && (state.quest.status !== 'skipped' && state.quest.status !== 'expired') && !(demo && (demo.phone || state.quest.status === 'validating')) && (
+          <QuestPanel snapshot={snapshot} quest={state.quest} now={now} rejection={rejection?.questId === state.quest.id ? rejection : null} />
+        )}
+      </div>
       <Toasts toasts={toasts} />
+      {demo && <DemoOverlay demo={demo} quest={state.quest} />}
     </div>
   )
 }
@@ -219,7 +228,7 @@ function Stats({ state }: { state: GameState }) {
 
 // ---- timer ------------------------------------------------------------------
 
-function TimerDock({ snapshot, now }: { snapshot: ServerSnapshot; now: () => number }) {
+function TimerDock({ snapshot, now, highlight = false }: { snapshot: ServerSnapshot; now: () => number; highlight?: boolean }) {
   useTicker(250)
   const { timer, quest } = snapshot.state
   const preset = getPreset(timer.presetId)
@@ -290,7 +299,7 @@ function TimerDock({ snapshot, now }: { snapshot: ServerSnapshot; now: () => num
         )}
         {timer.phase === 'break' &&
           (quest?.status === 'completed' ? (
-            <button className="btn-leaf rounded-full px-8 py-3 font-display text-lg font-semibold" disabled={busy} onClick={() => act('/api/timer/start')}>
+            <button className={`btn-leaf rounded-full px-8 py-3 font-display text-lg font-semibold ${highlight ? 'animate-pulse ring-4 ring-sun/80' : ''}`} disabled={busy} onClick={() => act('/api/timer/start')}>
               Back to work
             </button>
           ) : (
@@ -330,7 +339,7 @@ function QuestPanel({
   const completed = quest.status === 'completed'
 
   useEffect(() => {
-    if (completed) return
+    if (completed || DEMO) return
     getPairing()
       .then(setPairing)
       .catch((err: Error) => setPairingError(err.message))
@@ -400,7 +409,9 @@ function QuestPanel({
               {pairing ? (
                 <div className="h-full w-full [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: pairing.qrSvg }} />
               ) : (
-                <div className="grid h-full place-items-center text-center text-[11px] text-ink/50">{pairingError ?? 'Making QR…'}</div>
+                <div className="grid h-full place-items-center text-center text-[11px] text-ink/50">
+                  {DEMO ? <PhoneIcon className="h-12 w-12 text-moss-600" /> : (pairingError ?? 'Making QR…')}
+                </div>
               )}
             </div>
             <div>

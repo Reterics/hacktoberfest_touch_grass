@@ -1,0 +1,20 @@
+{
+  "target": "tree",
+  "model": "gemma3:4b",
+  "checkedAt": "2026-10-10T13:59:26.984Z",
+  "latencyMs": 1244,
+  "passes": true,
+  "verdict": {
+    "success": true,
+    "confidence": 0.98,
+    "detected": [
+      "tree",
+      "leaves",
+      "grass",
+      "park",
+      "bench",
+      "sunlight"
+    ],
+    "reason": "The image clearly shows a large tree with vibrant orange leaves."
+  }
+}

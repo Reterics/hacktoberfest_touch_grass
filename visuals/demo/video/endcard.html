@@ -1,0 +1,59 @@
+<!doctype html>
+<!--
+  The demo's open-innovation end card (apps/web/src/demo/DemoOverlay.tsx EndCard), rebuilt as separate
+  transparent layers so build.mjs can lay them over a living background and reveal each line on its cue.
+  ?show=gradient | kicker | l0..l5 | credits renders just that layer; the layout always includes every line
+  and the credits, so nothing shifts as lines arrive.
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: 'Fredoka Variable';
+    src: url('../../../node_modules/.pnpm/@fontsource-variable+fredoka@5.3.0/node_modules/@fontsource-variable/fredoka/files/fredoka-latin-wght-normal.woff2') format('woff2');
+    font-weight: 300 700;
+  }
+  @font-face {
+    font-family: 'Nunito Variable';
+    src: url('../../../node_modules/.pnpm/@fontsource-variable+nunito@5.3.0/node_modules/@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2') format('woff2');
+    font-weight: 200 1000;
+  }
+  html, body { margin: 0; width: 1920px; height: 1080px; background: transparent; font-family: 'Nunito Variable', sans-serif; }
+  .gradient { position: absolute; inset: 0; background: linear-gradient(to right, rgba(16, 23, 14, 0.95), rgba(16, 23, 14, 0.7), rgba(16, 23, 14, 0.1)); }
+  .card { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 16px; height: 1080px; max-width: 672px; box-sizing: border-box; padding: 0 56px; }
+  .kicker { font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #b9dc7d; }
+  h2 { margin: 0; font: 600 48px/1.25 'Fredoka Variable', sans-serif; color: #f6eedb; }
+  .lines { display: flex; flex-direction: column; gap: 6px; font-size: 20px; line-height: 28px; color: rgba(246, 238, 219, 0.8); }
+  .lines p { margin: 0; }
+  .result { margin-top: 12px !important; font: 600 24px/32px 'Fredoka Variable', sans-serif; color: #b9dc7d; }
+  .purpose { margin-top: 4px !important; font-size: 18px; line-height: 28px; color: rgba(246, 238, 219, 0.7); }
+  .finale { margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .buttons { height: 52px; }
+  .credits { margin: 0; font-size: 11px; line-height: 16px; color: rgba(246, 238, 219, 0.4); }
+  .hidden { visibility: hidden; }
+</style>
+</head>
+<body>
+  <div class="gradient" data-layer="gradient"></div>
+  <div class="card">
+    <div class="kicker" data-layer="kicker">Open innovation</div>
+    <h2 data-layer="l0">Open innovation lets us combine what already exists to create what doesn’t.</h2>
+    <div class="lines">
+      <p data-layer="l1">Local AI understands the world.</p>
+      <p data-layer="l2">Open technologies connect devices.</p>
+      <p data-layer="l3">Community tools accelerate creation.</p>
+      <p class="result" data-layer="l4">The result: an AI companion designed to get you away from AI.</p>
+      <p class="purpose" data-layer="l5">Moss uses technology to reconnect you with the world outside your screen.</p>
+    </div>
+    <div class="finale">
+      <div class="buttons"></div>
+      <p class="credits" data-layer="credits">Gemma 3 (local, via Ollama) · Three.js · React · WebSockets · art by Higgsfield · voice &amp; sound by ElevenLabs · 3D by Meshy</p>
+    </div>
+  </div>
+  <script>
+    const show = new URLSearchParams(location.search).get('show')
+    if (show) for (const el of document.querySelectorAll('[data-layer]')) if (el.dataset.layer !== show) el.classList.add('hidden')
+  </script>
+</body>
+</html>

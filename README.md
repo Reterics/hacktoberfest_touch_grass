@@ -24,7 +24,7 @@ Everything runs on your machine. Photos travel only over your local Wi-Fi, and n
 | ![Moss celebrating after the quest, with a new tiny tree on the desk and a sunbeam through the window](docs/images/quest-complete.webp) | ![End card: open innovation lets us combine what already exists to create what doesn't](docs/images/open-innovation.webp) |
 | **Reward:** local Gemma confirmed the tree; Moss recovers and the desk ecosystem grows. | **Why:** an AI companion designed to get you away from AI. |
 
-**▶ Demo video:** [youtu.be/jfAM9tN1Dsg](https://youtu.be/jfAM9tN1Dsg) · **Code:** [github.com/Reterics/hacktoberfest_touch_grass](https://github.com/Reterics/hacktoberfest_touch_grass)
+**▶ Demo video:** [youtu.be/xXZvVzqoxFI](https://www.youtube.com/watch?v=xXZvVzqoxFI) · **Code:** [github.com/Reterics/hacktoberfest_touch_grass](https://github.com/Reterics/hacktoberfest_touch_grass)
 
 Or watch the whole loop in about 90 seconds in the app itself: open `/?demo=1` ([details below](#demo-moss-needs-a-tree)).
 

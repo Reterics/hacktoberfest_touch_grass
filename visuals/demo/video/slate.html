@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- End-slate text for the demo video, rendered to a transparent PNG by build.sh and laid over the outro shot. -->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: 'Fredoka';
+    src: url('../../../node_modules/.pnpm/@fontsource-variable+fredoka@5.3.0/node_modules/@fontsource-variable/fredoka/files/fredoka-latin-wght-normal.woff2') format('woff2');
+    font-weight: 300 700;
+  }
+  @font-face {
+    font-family: 'Nunito';
+    src: url('../../../node_modules/.pnpm/@fontsource-variable+nunito@5.3.0/node_modules/@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2') format('woff2');
+    font-weight: 200 1000;
+  }
+  html, body { margin: 0; width: 1920px; height: 1080px; background: transparent; }
+  /* Darkens the bright bokeh behind the text, fading out well before Moss. */
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(16, 23, 14, 0.62) 0%, rgba(16, 23, 14, 0.42) 38%, rgba(16, 23, 14, 0) 62%);
+  }
+  .slate {
+    position: absolute; left: 150px; top: 0; bottom: 0; width: 900px;
+    display: flex; flex-direction: column; justify-content: center; gap: 22px;
+    color: #f6eedb; text-shadow: 0 4px 28px rgba(16, 23, 14, 0.85), 0 1px 3px rgba(16, 23, 14, 0.6);
+  }
+  .kicker { font: 800 22px/1 'Nunito'; letter-spacing: 0.32em; text-transform: uppercase; color: #b9dc7d; }
+  h1 { margin: 0; font: 600 168px/0.95 'Fredoka'; }
+  .line { font: 600 44px/1.2 'Fredoka'; white-space: nowrap; }
+  .sub { font: 500 30px/1.35 'Nunito'; color: rgba(246, 238, 219, 0.88); }
+  .url { margin-top: 18px; font: 700 26px/1 'Nunito'; color: rgba(246, 238, 219, 0.75); }
+</style>
+</head>
+<body>
+  <div class="slate">
+    <div class="kicker">Hacktoberfest · Open innovation</div>
+    <h1>Moss</h1>
+    <div class="line">An AI companion that gets you away from AI.</div>
+    <div class="sub">Focus timer, Tamagotchi and outdoor quests.<br />Local Gemma, Three.js, your phone and a real tree.</div>
+    <div class="url">github.com/Reterics/hacktoberfest_touch_grass</div>
+  </div>
+</body>
+</html>

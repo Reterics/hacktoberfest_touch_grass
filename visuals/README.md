@@ -64,6 +64,7 @@ The 3D body is deliberately **faceless**. Eyes, heavy upper lids, mouth and chee
 6. **Meshy auto-rig** of the Meshy body (walk and run included), plus the custom hop (action 417). Clips merged with `node scripts/build-moss-rig.mjs`, then optimized like the body.
 7. Achievement art from Higgsfield, with the master as the reference. The Outdoor Engineer image was regenerated to remove a real-world laptop logo.
 8. Demo scene (`?demo=1`): Higgsfield made the tree photo plus a title and an end card (two candidates each; a card showing a real-world laptop logo was rejected). ElevenLabs made the voice lines (two takes each, chosen by measured silence and loudness), narration, five SFX and the music bed. Local Gemma validated the tree photo once, and the verdict is replayed in the demo.
+9. Demo video ([YouTube](https://www.youtube.com/watch?v=xXZvVzqoxFI)): `visuals/demo/video/record.mjs` records `?demo=1` in headless Chrome, and `build.mjs` edits it with ffmpeg. The edit adds a Higgsfield (Kling 3.0) cinematic that ends on the game's exact opening frame, a real-world phone cutaway that cuts on its shutter flash into the in-game flash, a living end card (looping animation of the card's painting, with the text rebuilt from `endcard.html`), and an outro. The soundtrack is rebuilt from the demo's timeline with new ElevenLabs intro and outro music, ambience and one extra Moss line. The generated clips, audio and renders are not committed (see `.gitignore`); the video itself is on YouTube.
 
 ## Rules
 

@@ -6,3 +6,11 @@ data/
 *.db-journal
 .env
 .env.local
+
+# Demo video: generated media and renders stay out of git (the video is on YouTube).
+# Only the recording and edit scripts in visuals/demo/video are committed.
+visuals/demo/cinematic/
+visuals/demo/user_generated/
+visuals/demo/video/build/
+visuals/demo/video/shots/
+visuals/demo/video/audio/

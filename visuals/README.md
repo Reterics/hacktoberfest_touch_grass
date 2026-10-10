@@ -29,6 +29,7 @@ The design merges concept **05 Fern sprite** (anatomy) with concept **06 Turf bl
 | `concepts/moss-concept-0*.webp` | The six exploration concepts |
 | `meshy/moss-body-raw.glb` | Raw Meshy 7.1 output (12.4k triangles, embedded 2K texture) |
 | `meshy/moss-walk-raw.glb`, `meshy/moss-hop-raw.glb` | Meshy auto-rig output: the same skinned body with the free `walking` clip, and the custom `Hop_with_Arms_Raised` clip (action 417) |
+| `demo/demo-*.webp` | Demo scene art: the phone's tree photo, the title card and the end card (Higgsfield) |
 | `achievements/achievement-*.webp` | Achievement art sources (Actually Touched Grass, Forest Friend, Photosynthesis, Chlorophyll Addict, Outdoor Engineer) |
 
 The master is a lossless PNG. The other references are stored as quality-92 WebP to keep the repository small.
@@ -42,6 +43,8 @@ The master is a lossless PNG. The other references are stored as quality-92 WebP
 | Rigged body (`walk`, `hop`) | `apps/web/public/assets/models/moss-rigged.glb` | Meshy rig plus clips, merged by `scripts/build-moss-rig.mjs`, then optimized (452 KB) |
 | Phone motion strips | `apps/web/public/assets/moss/moss-walk.webp`, `moss-hop.webp` | Baked from the rigged body with the live face (12 and 24 frames, 320×384) |
 | Achievement art | `apps/web/public/assets/achievements/<id>.webp` | Higgsfield, 512px |
+| Demo images | `apps/web/public/assets/demo/*.webp` | Higgsfield (the tree photo is plain photography; the cards use the master as the reference) |
+| Demo audio | `apps/web/public/assets/demo/audio/*.mp3` | ElevenLabs: Moss's lines (v3, voice "Cavendish"), narration (v3, "Carolyn"), SFX (Sound Effects v2), music bed (Music v2.5). Silence-trimmed and loudness-normalized with ffmpeg |
 
 The 3D body is deliberately **faceless**. Eyes, heavy upper lids, mouth and cheeks are rendered live in Three.js (`apps/web/src/desktop/MossModel.tsx`), so blinking and every expression stay dynamic. The fern fronds bend in a vertex shader driven by each visual state's `droop` value. Expression values per state live in `VISUAL_PROFILES` (`apps/web/src/lib/visualState.ts`). Preview any state with `http://localhost:5173/?visual=<state>`.
 
@@ -60,9 +63,10 @@ The 3D body is deliberately **faceless**. Eyes, heavy upper lids, mouth and chee
 5. Background removal on the expression sheet, then cropping into WebP mood sprites.
 6. **Meshy auto-rig** of the Meshy body (walk and run included), plus the custom hop (action 417). Clips merged with `node scripts/build-moss-rig.mjs`, then optimized like the body.
 7. Achievement art from Higgsfield, with the master as the reference. The Outdoor Engineer image was regenerated to remove a real-world laptop logo.
+8. Demo scene (`?demo=1`): Higgsfield made the tree photo plus a title and an end card (two candidates each; a card showing a real-world laptop logo was rejected). ElevenLabs made the voice lines (two takes each, chosen by measured silence and loudness), narration, five SFX and the music bed. Local Gemma validated the tree photo once, and the verdict is replayed in the demo.
 
 ## Rules
 
 - Keep Moss consistent. Never regenerate it from text alone; always pass `moss-master-front.png` as a reference.
 - Name production assets semantically (`moss-body.glb`, `mood-tired.webp`), never by generation job ID.
-- Higgsfield and Meshy are design-time only. The app loads everything locally.
+- Higgsfield, Meshy and ElevenLabs are design-time only. The app loads everything locally.

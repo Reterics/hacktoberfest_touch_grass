@@ -28,6 +28,15 @@ Open <http://localhost:5173> on the laptop. When a break starts, scan the QR cod
 pnpm build && pnpm start   # one server on :3000 serves the API, the desktop UI and the phone companion
 ```
 
+## Demo: "Moss Needs a Tree"
+
+Open `http://localhost:5173/?demo=1` (or `:3000/?demo=1` in production mode) and press **Play demo**. A one-minute, voiced replay of [docs/DEMO-SCENE.md](docs/DEMO-SCENE.md): the focus session ends, Moss asks for a tree, heads out on the phone, a tree is photographed and recognized, the desk ecosystem grows, and work resumes. It ends on the open-innovation card.
+
+- It needs no server, Ollama or phone, and never writes game data.
+- Every state change goes through the real game engine on a scripted clock (`apps/web/src/demo/script.ts`, covered by a test). The engine itself picks the tree quest from Moss's lowest need, and computes the XP and the tiny-tree unlock.
+- The photo verdict is a **recorded** run of local Gemma on the same photo, not a made-up one. Re-run it with `pnpm --filter @moss/server exec tsx scripts/verify-demo-photo.ts <photo.jpg>`, which rewrites `apps/web/src/demo/gemma-verdict.json`.
+- Voice, SFX and music were generated with ElevenLabs, and the tree photo and cards with Higgsfield, at design time. All of them ship as local files in `apps/web/public/assets/demo/`.
+
 ## The loop
 
 ```text

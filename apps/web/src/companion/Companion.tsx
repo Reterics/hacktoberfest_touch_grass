@@ -4,6 +4,9 @@ import { ApiError, post, uploadPhoto, type PhotoOutcome } from '../lib/api.ts'
 import { prepareImage } from '../lib/image.ts'
 import { formatClock, useGame, useTicker } from '../lib/useGame.ts'
 import { MossSprite, type SpriteMood } from '../components/MossSprite.tsx'
+import { MossArrival, MossCelebrate, MossClip } from '../components/MossMotion.tsx'
+import { ACHIEVEMENT_RULES } from '@moss/game-engine'
+import { achievementArt } from '../lib/assets.ts'
 import { CameraIcon } from '../components/icons.tsx'
 import { STAT_LABEL } from '../components/icons.tsx'
 
@@ -62,7 +65,7 @@ export default function Companion() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-full bg-[radial-gradient(ellipse_at_top,#2f4226_0%,#1b2418_55%,#10170e_100%)] px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+    <div className="min-h-full overflow-x-hidden bg-[radial-gradient(ellipse_at_top,#2f4226_0%,#1b2418_55%,#10170e_100%)] px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex max-w-sm flex-col items-center text-center">{children}</div>
     </div>
   )
@@ -89,6 +92,7 @@ function RestingScreen({ snapshot, now }: { snapshot: ServerSnapshot; now: () =>
 type PhotoState = { kind: 'idle' } | { kind: 'sending' } | { kind: 'result'; outcome: PhotoOutcome } | { kind: 'failed'; message: string }
 
 function QuestScreen({ quest, snapshot, now }: { quest: Quest; snapshot: ServerSnapshot; now: () => number }) {
+  useTicker(quest.completionType === 'TIMER' ? 1000 : 60_000)
   const [photo, setPhoto] = useState<PhotoState>({ kind: 'idle' })
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -127,7 +131,7 @@ function QuestScreen({ quest, snapshot, now }: { quest: Quest; snapshot: ServerS
   if (completed && result) {
     return (
       <div className="flex flex-col items-center pt-4">
-        <MossSprite mood="happy" size={170} />
+        <MossCelebrate size={170} />
         <div className="mt-4 text-sm font-bold tracking-[0.2em] text-moss-300 uppercase">Quest complete</div>
         <h1 className="mt-1 font-display text-3xl font-semibold">{snapshot.state.dialogue?.text ?? 'Moss recovered.'}</h1>
         {photo.kind === 'result' && photo.outcome.outcome === 'completed' && photo.outcome.detected.length > 0 && (
@@ -142,6 +146,19 @@ function QuestScreen({ quest, snapshot, now }: { quest: Quest; snapshot: ServerS
           ))}
         </div>
         {result.newUnlocks.length > 0 && <p className="mt-4 font-display text-lg text-sun">Something new grew on your desk.</p>}
+        {(result.newAchievements ?? []).map((id) => {
+          const rule = ACHIEVEMENT_RULES.find((r) => r.id === id)
+          return (
+            <div key={id} className="animate-pop mt-5 flex w-full items-center gap-3 rounded-3xl bg-parchment p-3 text-left text-ink">
+              <img src={achievementArt(id)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
+              <div>
+                <div className="text-[11px] font-bold tracking-[0.2em] text-bark uppercase">Achievement unlocked</div>
+                <div className="font-display text-xl leading-tight font-semibold">{rule?.title}</div>
+                <div className="text-xs text-ink/60">{rule?.description}</div>
+              </div>
+            </div>
+          )
+        })}
         <p className="mt-8 text-parchment/60">Head back to your workstation whenever you're ready.</p>
       </div>
     )
@@ -151,6 +168,8 @@ function QuestScreen({ quest, snapshot, now }: { quest: Quest; snapshot: ServerS
   const outcome = photo.kind === 'result' ? photo.outcome : null
   const manualAllowed = quest.manualAllowed || quest.attempts >= 2 || (outcome && outcome.outcome !== 'completed' && outcome.manualAllowed)
   const mood: SpriteMood = validating ? 'thinking' : outcome?.outcome === 'rejected' ? 'sad' : 'eager'
+  const timerRunning =
+    quest.completionType === 'TIMER' && !!quest.timerStartedAt && now() < quest.timerStartedAt + (quest.timerMs ?? 0)
 
   return (
     <div className="flex flex-col items-center">
@@ -161,6 +180,10 @@ function QuestScreen({ quest, snapshot, now }: { quest: Quest; snapshot: ServerS
             <MossSprite mood="thinking" size={90} />
           </div>
         </div>
+      ) : timerRunning ? (
+        <MossClip clip="walk" size={150} />
+      ) : mood === 'eager' && !outcome ? (
+        <MossArrival size={150} mood="eager" />
       ) : (
         <MossSprite mood={mood} size={150} />
       )}

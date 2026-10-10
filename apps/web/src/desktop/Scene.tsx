@@ -16,6 +16,8 @@ export interface SceneProps {
   dialogue: Dialogue | null
   /** Increments each time a quest completes, to fire the reward stream. */
   rewardKey: number
+  /** Moss is outside with the phone. */
+  away: boolean
   reducedMotion: boolean
   onPoke: () => void
 }
@@ -35,7 +37,7 @@ export function Scene(props: SceneProps) {
   )
 }
 
-function SceneContents({ visual, phase, level, health, unlocks, dialogue, rewardKey, reducedMotion, onPoke }: SceneProps) {
+function SceneContents({ visual, phase, level, health, unlocks, dialogue, rewardKey, reducedMotion, onPoke, away }: SceneProps) {
   const head = useRef<THREE.Object3D>(null)
   const has = (id: UnlockId) => unlocks.includes(id)
   return (
@@ -53,11 +55,11 @@ function SceneContents({ visual, phase, level, health, unlocks, dialogue, reward
       <DeskPlant big={has('desk_plant')} lush={has('ecosystem')} />
 
       <group position={[0, 0, 0.2]}>
-        <MossModel visual={visual} level={level} health={health} reducedMotion={reducedMotion} onPoke={onPoke} headRef={head} />
-        {dialogue && <DialogueBubble key={dialogue.at} text={dialogue.text} />}
+        <MossModel visual={visual} level={level} health={health} reducedMotion={reducedMotion} onPoke={onPoke} headRef={head} away={away} />
+        {dialogue && !away && <DialogueBubble key={dialogue.at} text={dialogue.text} />}
       </group>
 
-      {has('grass_patch') && <Grow><GrassPatch /></Grow>}
+      {has('grass_patch') && <Grow position={[1.25, 0, -1.05]}><GrassPatch /></Grow>}
       {has('tiny_tree') && <Grow position={[-1.2, 0, 0.45]}><TinyTree /></Grow>}
       {has('flower_pot') && <Grow position={[1.75, 0, -0.55]}><FlowerPot /></Grow>}
       {has('sun_crystal') && <Grow position={[0.95, 1.75, -0.9]}><SunCrystal /></Grow>}
@@ -483,32 +485,68 @@ function TinyTree() {
   )
 }
 
+/** A curved, tapered grass blade (4 segments), pointing up from the origin. */
+function bladeGeometry(): THREE.BufferGeometry {
+  const segments = 4
+  const positions: number[] = []
+  const indices: number[] = []
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments
+    const half = 0.012 * (1 - t) + 0.0015
+    const bend = t * t * 0.035
+    positions.push(-half, t, bend, half, t, bend)
+    if (i < segments) {
+      const a = i * 2
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
+    }
+  }
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+  return geo
+}
+
+/** Unlocked by the first grass quest: a little tray of real sod beside Moss. */
 function GrassPatch() {
-  const count = 220
+  const count = 320
   const mesh = useRef<THREE.InstancedMesh>(null)
+  const blade = useMemo(bladeGeometry, [])
+  const trayTop = 0.075
   useEffect(() => {
     const m = mesh.current
     if (!m) return
     const r = rng(21)
     const d = new THREE.Object3D()
     for (let i = 0; i < count; i++) {
+      // Even spread over the tray (sqrt keeps the centre from clumping).
       const a = r() * Math.PI * 2
-      const rad = 0.55 + r() * 0.45
-      d.position.set(Math.cos(a) * rad, 0.05, 0.2 + Math.sin(a) * rad * 0.8)
-      d.rotation.set((r() - 0.5) * 0.4, r() * Math.PI, (r() - 0.5) * 0.4)
-      d.scale.set(1, 0.6 + r() * 0.9, 1)
+      const rad = Math.sqrt(r()) * 0.27
+      d.position.set(Math.cos(a) * rad, trayTop, Math.sin(a) * rad)
+      d.rotation.set((r() - 0.5) * 0.5, r() * Math.PI * 2, (r() - 0.5) * 0.5)
+      const h = 0.09 + r() * 0.09
+      d.scale.set(1, h, 1)
       d.updateMatrix()
       m.setMatrixAt(i, d.matrix)
-      m.setColorAt(i, new THREE.Color().setHSL(0.24 + r() * 0.05, 0.5, 0.3 + r() * 0.15))
+      m.setColorAt(i, new THREE.Color().setHSL(0.23 + r() * 0.06, 0.55, 0.28 + r() * 0.18))
     }
     m.instanceMatrix.needsUpdate = true
     if (m.instanceColor) m.instanceColor.needsUpdate = true
-  }, [])
+  }, [blade])
   return (
     <group>
-      <instancedMesh ref={mesh} args={[undefined, undefined, count]} castShadow>
-        <coneGeometry args={[0.018, 0.12, 3]} />
-        <meshStandardMaterial roughness={0.9} />
+      {/* shallow terracotta tray */}
+      <mesh position={[0, trayTop / 2, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.32, 0.29, trayTop, 32]} />
+        <meshStandardMaterial color="#b9653e" roughness={0.85} />
+      </mesh>
+      {/* sod surface so the blades sit on ground, not on air */}
+      <mesh position={[0, trayTop + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[0.295, 32]} />
+        <meshStandardMaterial color="#3f5e22" roughness={1} />
+      </mesh>
+      <instancedMesh ref={mesh} args={[blade, undefined, count]} castShadow>
+        <meshStandardMaterial roughness={0.8} side={THREE.DoubleSide} />
       </instancedMesh>
     </group>
   )

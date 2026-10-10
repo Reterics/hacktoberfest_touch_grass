@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AIStatus, GameEvent, GameState, PairingInfo, Quest, ServerSnapshot, UnlockId } from '@moss/shared'
-import { UNLOCK_RULES, getPreset, xpToNextLevel } from '@moss/game-engine'
+import type { AchievementId, AIStatus, GameEvent, GameState, PairingInfo, Quest, ServerSnapshot, UnlockId } from '@moss/shared'
+import { achievementArt } from '../lib/assets.ts'
+import { ACHIEVEMENT_RULES, UNLOCK_RULES, getPreset, xpToNextLevel } from '@moss/game-engine'
 import { getPairing, post, uploadPhoto, ApiError } from '../lib/api.ts'
 import { formatClock, useGame, useReducedMotion, useTicker } from '../lib/useGame.ts'
 import { VISUAL_PROFILES, useVisualState, type MossVisualState } from '../lib/visualState.ts'
@@ -30,6 +31,10 @@ export default function Desktop() {
         if (e.kind === 'quest_rejected') setRejection({ questId: e.questId, reason: e.reason, technical: e.technical })
         if (e.kind === 'quest_validating') setRejection(null)
         if (e.kind === 'level_up') pushToast(setToasts, { id: e.at + 1, kind: 'level', text: `Level ${e.level}` })
+        if (e.kind === 'achievement') {
+          const rule = ACHIEVEMENT_RULES.find((r) => r.id === e.achievement)
+          pushToast(setToasts, { id: e.at + 10 + ACHIEVEMENT_RULES.indexOf(rule!), kind: 'achievement', text: rule?.title ?? 'Achievement', achievement: e.achievement })
+        }
         if (e.kind === 'unlock') {
           const rule = UNLOCK_RULES.find((r) => r.id === e.unlock)
           pushToast(setToasts, { id: e.at + 2 + UNLOCK_RULES.indexOf(rule!), kind: 'unlock', text: rule?.label ?? 'Something grew' })
@@ -49,6 +54,9 @@ export default function Desktop() {
   const { state, ai } = snapshot
   const health = averageWellbeing(state)
   const dialogue = pokeLine ? { text: pokeLine, emotion: 'happy' as const, at: -1 } : state.dialogue
+  // Moss "heads outside" while a paired phone is carrying an open quest.
+  const questOpen = state.quest?.status === 'active' || state.quest?.status === 'validating'
+  const away = forcedAway || (snapshot.phoneConnected && !!questOpen)
 
   return (
     <div className="relative h-full w-full overflow-hidden select-none">
@@ -61,6 +69,7 @@ export default function Desktop() {
           unlocks={state.creature.unlocks}
           dialogue={dialogue}
           rewardKey={rewardKey}
+          away={away}
           reducedMotion={reducedMotion}
           onPoke={() => {
             setPokeLine(pokeLines[Math.floor(Math.random() * pokeLines.length)]!)
@@ -73,7 +82,7 @@ export default function Desktop() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(10,14,8,0.55)_100%)]" />
 
       <TopLeft state={state} />
-      <TopRight ai={ai} phoneConnected={snapshot.phoneConnected} connection={connection} />
+      <TopRight ai={ai} phoneConnected={snapshot.phoneConnected} connection={connection} away={away} />
       {ai.state !== 'ready' && ai.state !== 'checking' && <SetupBanner ai={ai} />}
       <Stats state={state} />
       <TimerDock snapshot={snapshot} now={now} />
@@ -84,6 +93,9 @@ export default function Desktop() {
     </div>
   )
 }
+
+// Design review: /?away=1 sends Moss outside.
+const forcedAway = new URLSearchParams(window.location.search).get('away') === '1'
 
 const forcedVisual = ((v) => (v && v in VISUAL_PROFILES ? (v as MossVisualState) : null))(
   new URLSearchParams(window.location.search).get('visual'),
@@ -147,11 +159,12 @@ function TopLeft({ state }: { state: GameState }) {
         </span>
         {nextUnlock && <span className="text-parchment/50">Next: {UNLOCK_HINTS[nextUnlock.id]}</span>}
       </div>
+      <Achievements earned={creature.achievements} />
     </div>
   )
 }
 
-function TopRight({ ai, phoneConnected, connection }: { ai: AIStatus; phoneConnected: boolean; connection: string }) {
+function TopRight({ ai, phoneConnected, connection, away }: { ai: AIStatus; phoneConnected: boolean; connection: string; away: boolean }) {
   const aiColor = ai.state === 'ready' ? 'bg-moss-400' : ai.state === 'checking' ? 'bg-sun' : 'bg-berry'
   return (
     <div className="absolute top-5 right-5 flex items-center gap-2 text-xs font-semibold">
@@ -162,7 +175,7 @@ function TopRight({ ai, phoneConnected, connection }: { ai: AIStatus; phoneConne
       </span>
       <span className={`hud-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 ${phoneConnected ? 'text-moss-300' : 'text-parchment/50'}`}>
         <PhoneIcon className="h-3.5 w-3.5" />
-        {phoneConnected ? 'Phone paired' : 'No phone'}
+        {away ? 'Moss is outside with you' : phoneConnected ? 'Phone paired' : 'No phone'}
       </span>
     </div>
   )
@@ -433,23 +446,33 @@ function BreakClock({ endsAt, now }: { endsAt: number; now: () => number }) {
 
 interface Toast {
   id: number
-  kind: 'xp' | 'level' | 'unlock'
+  kind: 'xp' | 'level' | 'unlock' | 'achievement'
   text: string
+  achievement?: AchievementId
 }
 
 function pushToast(set: React.Dispatch<React.SetStateAction<Toast[]>>, toast: Toast) {
   // Let the emotional reward (Moss reacting, energy flowing) land before the number.
-  const delay = toast.kind === 'xp' ? 1400 : toast.kind === 'level' ? 2000 : 2600
+  const delay = toast.kind === 'xp' ? 1400 : toast.kind === 'level' ? 2000 : toast.kind === 'unlock' ? 2600 : 3400
   setTimeout(() => {
     set((t) => [...t.filter((x) => x.id !== toast.id), toast])
-    setTimeout(() => set((t) => t.filter((x) => x.id !== toast.id)), 3200)
+    setTimeout(() => set((t) => t.filter((x) => x.id !== toast.id)), toast.kind === 'achievement' ? 5200 : 3200)
   }, delay)
 }
 
 function Toasts({ toasts }: { toasts: Toast[] }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-[22%] flex flex-col items-center gap-3">
-      {toasts.map((t) => (
+      {toasts.map((t) =>
+        t.kind === 'achievement' && t.achievement ? (
+          <div key={t.id} className="parchment animate-pop flex items-center gap-4 rounded-3xl p-3 pr-6">
+            <img src={achievementArt(t.achievement)} alt="" className="h-24 w-24 rounded-2xl object-cover" />
+            <div>
+              <div className="text-[11px] font-bold tracking-[0.2em] text-bark uppercase">Achievement unlocked</div>
+              <div className="font-display text-2xl font-semibold">{t.text}</div>
+            </div>
+          </div>
+        ) : (
         <div
           key={t.id}
           className={`animate-rise font-display font-semibold drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)] ${
@@ -458,7 +481,59 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
         >
           {t.kind === 'unlock' ? `New: ${t.text}` : t.text}
         </div>
-      ))}
+        ),
+      )}
     </div>
+  )
+}
+
+// ---- achievements -----------------------------------------------------------
+
+function Achievements({ earned }: { earned: AchievementId[] }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button className="hud-glass flex items-center gap-2 self-start rounded-xl px-3 py-2 text-xs text-parchment/80" onClick={() => setOpen(true)}>
+        <span className="font-bold text-sun">Achievements</span>
+        <span className="flex -space-x-1.5">
+          {ACHIEVEMENT_RULES.map((r) => (
+            <img
+              key={r.id}
+              src={achievementArt(r.id)}
+              alt={r.title}
+              title={r.title}
+              className={`h-6 w-6 rounded-full border border-forest-900 object-cover ${earned.includes(r.id) ? '' : 'opacity-35 grayscale'}`}
+            />
+          ))}
+        </span>
+        <span className="text-parchment/50">
+          {earned.length}/{ACHIEVEMENT_RULES.length}
+        </span>
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-30 grid place-items-center bg-forest-950/70 backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="parchment animate-pop w-[min(760px,92vw)] rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-display text-2xl font-semibold">Achievements</h2>
+              <button className="text-sm font-semibold text-ink/50 hover:text-ink" onClick={() => setOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {ACHIEVEMENT_RULES.map((r) => {
+                const got = earned.includes(r.id)
+                return (
+                  <div key={r.id} className="text-center">
+                    <img src={achievementArt(r.id)} alt="" className={`aspect-square w-full rounded-2xl object-cover ${got ? '' : 'opacity-40 grayscale'}`} />
+                    <div className="mt-2 font-display text-lg leading-tight font-semibold">{r.title}</div>
+                    <div className="text-xs text-ink/60">{got ? r.description : `Locked: ${r.description.replace(/^Completed|^Took/, (m) => (m === 'Took' ? 'Take' : 'Complete'))}`}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

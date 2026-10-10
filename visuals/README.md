@@ -44,7 +44,7 @@ The master is a lossless PNG. The other references are stored as quality-92 WebP
 | Phone motion strips | `apps/web/public/assets/moss/moss-walk.webp`, `moss-hop.webp` | Baked from the rigged body with the live face (12 and 24 frames, 320×384) |
 | Achievement art | `apps/web/public/assets/achievements/<id>.webp` | Higgsfield, 512px |
 | Demo images | `apps/web/public/assets/demo/*.webp` | Higgsfield (the tree photo is plain photography; the cards use the master as the reference) |
-| Demo audio | `apps/web/public/assets/demo/audio/*.mp3` | ElevenLabs: Moss's lines (v3, voice "Cavendish"), narration (v3, "Carolyn"), SFX (Sound Effects v2), music bed (Music v2.5). Silence-trimmed and loudness-normalized with ffmpeg |
+| Demo audio | `apps/web/public/assets/demo/audio/*.mp3` | ElevenLabs: Moss's lines (v3, voice "Cavendish"), intro and end-card narration (v3, "Carolyn"), SFX (Sound Effects v2), music bed (Music v2.5). Silence-trimmed and loudness-normalized with ffmpeg |
 
 The 3D body is deliberately **faceless**. Eyes, heavy upper lids, mouth and cheeks are rendered live in Three.js (`apps/web/src/desktop/MossModel.tsx`), so blinking and every expression stay dynamic. The fern fronds bend in a vertex shader driven by each visual state's `droop` value. Expression values per state live in `VISUAL_PROFILES` (`apps/web/src/lib/visualState.ts`). Preview any state with `http://localhost:5173/?visual=<state>`.
 

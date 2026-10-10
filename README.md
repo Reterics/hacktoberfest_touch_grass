@@ -1,10 +1,30 @@
 # Moss
 
+[![CI](https://github.com/Reterics/hacktoberfest_touch_grass/actions/workflows/ci.yml/badge.svg)](https://github.com/Reterics/hacktoberfest_touch_grass/actions/workflows/ci.yml)
+![Node 22.13+](https://img.shields.io/badge/node-22.13%2B-339933?logo=nodedotjs&logoColor=white)
+![pnpm 9](https://img.shields.io/badge/pnpm-9-F69220?logo=pnpm&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Three.js](https://img.shields.io/badge/Three.js-r171-000000?logo=threedotjs&logoColor=white)
+![Gemma 3 4B via Ollama](https://img.shields.io/badge/AI-Gemma%203%204B%20(local)-4285F4?logo=google&logoColor=white)
+![No cloud AI](https://img.shields.io/badge/cloud%20AI-none-5c8c2c)
+
+![Moss, a small fern creature, sitting on a mossy stone next to a glowing phone in an autumn forest](docs/images/title.webp)
+
 A local-first AI productivity companion: **Tamagotchi × focus timer × outdoor quests.**
 
 Moss is a small forest creature that works beside you on your laptop. When a focus session ends, Moss develops a need that can only be met in the physical world. You take your phone outside, photograph a tree (or grass, or a flower), and local **Gemma 3 4B** checks the photo. Moss recovers, and its tiny desk ecosystem grows.
 
 Everything runs on your machine. Photos travel only over your local Wi-Fi, and no cloud AI is involved.
+
+| | |
+|---|---|
+| ![Moss working beside a tiny laptop on a cozy desk, with a subtitle about screen time](docs/images/intro.webp) | ![The break quest "Find me a tree" on the phone while Moss heads outside](docs/images/quest-on-phone.webp) |
+| **Focus:** Moss works beside you while you work. | **Break:** Moss needs a tree, so you take the phone outside. |
+| ![Moss celebrating after the quest, with a new tiny tree on the desk and a sunbeam through the window](docs/images/quest-complete.webp) | ![End card: open innovation lets us combine what already exists to create what doesn't](docs/images/open-innovation.webp) |
+| **Reward:** local Gemma confirmed the tree; Moss recovers and the desk ecosystem grows. | **Why:** an AI companion designed to get you away from AI. |
+
+Watch the whole loop in about 90 seconds: run the app and open `/?demo=1` ([details below](#demo-moss-needs-a-tree)).
 
 ## Quick start
 
@@ -30,7 +50,7 @@ pnpm build && pnpm start   # one server on :3000 serves the API, the desktop UI 
 
 ## Demo: "Moss Needs a Tree"
 
-Open `http://localhost:5173/?demo=1` (or `:3000/?demo=1` in production mode) and press **Play demo**. A one-minute, voiced replay of [docs/DEMO-SCENE.md](docs/DEMO-SCENE.md): the focus session ends, Moss asks for a tree, heads out on the phone, a tree is photographed and recognized, the desk ecosystem grows, and work resumes. It ends on the open-innovation card.
+Open `http://localhost:5173/?demo=1` (or `:3000/?demo=1` in production mode) and press **Play demo**. A voiced, roughly 90-second replay of [docs/DEMO-SCENE.md](docs/DEMO-SCENE.md). It opens on the problem (too much screen time, skipped breaks) and the idea, then the gameplay: the focus session ends, Moss asks for a tree, heads out on the phone, a tree is photographed and recognized, the desk ecosystem grows, and work resumes. It ends on the open-innovation card.
 
 - It needs no server, Ollama or phone, and never writes game data.
 - Every state change goes through the real game engine on a scripted clock (`apps/web/src/demo/script.ts`, covered by a test). The engine itself picks the tree quest from Moss's lowest need, and computes the XP and the tiny-tree unlock.

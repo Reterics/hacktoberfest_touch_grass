@@ -1,0 +1,22 @@
+{
+  "name": "moss",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first AI productivity companion: Tamagotchi x focus timer x outdoor quests.",
+  "type": "module",
+  "packageManager": "pnpm@9.9.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter @moss/server --filter @moss/web dev",
+    "build": "pnpm --filter @moss/web build",
+    "start": "pnpm --filter @moss/server start",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

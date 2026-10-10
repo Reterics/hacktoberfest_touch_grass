@@ -1,0 +1,78 @@
+# Moss
+
+A local-first AI productivity companion: **Tamagotchi × focus timer × outdoor quests.**
+
+Moss is a small forest creature that works beside you on your laptop. When a focus session ends, Moss develops a need that can only be met in the physical world. You take your phone outside, photograph a tree (or grass, or a flower), and local **Gemma 3 4B** checks the photo. Moss recovers, and its tiny desk ecosystem grows.
+
+Everything runs on your machine. Photos travel only over your local Wi-Fi, and no cloud AI is involved.
+
+## Quick start
+
+Requirements: **Node 22.13+**, **pnpm 9**, and **[Ollama](https://ollama.com)**.
+
+```bash
+ollama pull gemma3:4b      # ~3.3 GB, once
+pnpm install
+pnpm dev                   # backend on :3000, web on :5173
+```
+
+Open <http://localhost:5173> on the laptop. When a break starts, scan the QR code with a phone on the **same Wi-Fi**.
+
+- **Short demo loop:** pick **Demo 30s / 2m** in the preset selector next to *Start focus*.
+- **Windows:** the first time the server binds to the network, Windows Firewall asks for permission. Allow it on **private networks**, or the phone can't connect.
+- **Wrong IP in the QR code?** Set `MOSS_PUBLIC_HOST=192.168.x.x` in `.env` (see `.env.example`).
+
+### Production mode
+
+```bash
+pnpm build && pnpm start   # one server on :3000 serves the API, the desktop UI and the phone companion
+```
+
+## The loop
+
+```text
+Focus → Moss develops a need → Gemma words a quest → phone (QR) → photo
+      → Gemma validates → game engine applies rewards → Moss reacts
+      → desk ecosystem grows → next focus session
+```
+
+## Architecture
+
+```text
+apps/
+  server/        Fastify + WebSocket + node:sqlite. Owns the authoritative game state.
+  web/           React + Vite + Tailwind + Three.js (react-three-fiber).
+                   /           desktop diorama (3D Moss, HUD, quest panel + QR)
+                   /companion  lightweight phone page (no Three.js)
+packages/
+  shared/        Types and the laptop <-> phone protocol
+  game-engine/   Pure, deterministic rules: timers, stats, XP, quests, unlocks (+ tests)
+  ai/            AIProvider abstraction, OllamaProvider, Moss prompts, zod-validated outputs (+ tests)
+docs/            Product, architecture, game design, visual direction
+```
+
+Key rules (see `CLAUDE.md` and `docs/`):
+
+- **The engine decides, the AI suggests.** The engine picks the need and the quest template, and the template fixes the rewards. Gemma only rewrites the wording, and the result is validated (length, safety, and that it still names the vision target). For photos, Gemma returns `{success, confidence, detected, reason}`, and the engine applies its own confidence threshold.
+- **AI failure never blocks the loop.** If Ollama is down, quests use built-in wording, and photo quests offer *Complete manually* (half XP). The desktop shows a setup banner with the exact fix command.
+- **Quest wording is prefetched** about 25 s before focus ends, so the break starts with Gemma's text ready.
+- **Security:** timer controls only accept requests from the laptop itself. The phone needs a pairing token from the QR code (random, expires after 12 h). Uploads are size-limited and checked by magic bytes, and photos are held in memory for validation, never written to disk. Ollama stays on localhost and is reached only through the backend.
+
+The single balance table lives in `packages/game-engine/src/balance.ts`. Its header comment records the decisions made for the open questions in `docs/GAME-DESIGN.md`.
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Backend (watch mode) and Vite dev server, both reachable on the LAN |
+| `pnpm test` | Vitest: engine rules and AI validation (no Ollama needed) |
+| `pnpm typecheck` | TypeScript across all packages |
+| `pnpm build` / `pnpm start` | Production bundle, then a single server on :3000 |
+
+## Configuration
+
+See `.env.example`: `OLLAMA_HOST`, `OLLAMA_TEXT_MODEL`, `OLLAMA_VISION_MODEL` (separate on purpose), `MOSS_PORT`, `MOSS_PUBLIC_HOST`, `MOSS_DATA_DIR`.
+
+## Visuals
+
+The current Moss is a **procedural Three.js placeholder** behind a `VisualStateController` (`apps/web/src/lib/visualState.ts`). Game state maps deterministically to visual states, with priorities and minimum durations. The renderer reads only a visual profile, so it can be swapped for a GLB designed in Higgsfield without touching game logic. Higgsfield is design-time only, never runtime.

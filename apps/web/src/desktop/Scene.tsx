@@ -66,6 +66,8 @@ function SceneContents({ visual, phase, level, health, unlocks, dialogue, reward
       {has('ecosystem') && <Grow><Ecosystem /></Grow>}
 
       <RewardStream key={rewardKey} active={rewardKey > 0} reducedMotion={reducedMotion} />
+      {rewardKey > 0 && <BlownLeaf key={`leaf-${rewardKey}`} seed={rewardKey} reducedMotion={reducedMotion} />}
+      <SunBeam on={visual === 'quest_success' || visual === 'level_up'} />
       <ContactShadows position={[0, 0.005, 0]} opacity={0.45} scale={8} blur={2.4} far={2} resolution={512} />
     </>
   )
@@ -665,6 +667,91 @@ function RewardStream({ active, reducedMotion }: { active: boolean; reducedMotio
       <sphereGeometry args={[1, 8, 8]} />
       <meshBasicMaterial color="#d8f28a" toneMapped={false} />
     </instancedMesh>
+  )
+}
+
+/** After a quest, one autumn leaf drifts in through the window and settles on the desk near Moss. */
+function BlownLeaf({ seed, reducedMotion }: { seed: number; reducedMotion: boolean }) {
+  const ref = useRef<THREE.Mesh>(null)
+  const geo = useMemo(() => leafGeometry(0.22, 0.12), [])
+  const start = useRef<number | null>(null)
+  const path = useMemo(() => {
+    const r = rng(seed * 7 + 3)
+    // Open desk to Moss's right, clear of the timer HUD.
+    const land = new THREE.Vector3(0.5 + r() * 0.2, 0.012, -0.5 - r() * 0.2)
+    return {
+      curve: new THREE.CubicBezierCurve3(
+        new THREE.Vector3(WINDOW_POS.x + 0.3, WINDOW_POS.y + 0.4, WINDOW_POS.z + 0.1),
+        new THREE.Vector3(-0.6, 2.6, -1.2),
+        new THREE.Vector3(1.1, 1.3, 0.2),
+        land,
+      ),
+      spin: 2 + r() * 2,
+      restYaw: r() * Math.PI * 2,
+      color: ['#d9732e', '#e6a33a', '#b84a2a'][Math.floor(r() * 3)]!,
+    }
+  }, [seed])
+  const FLIGHT = 3.2
+
+  useFrame(({ clock }) => {
+    const m = ref.current
+    if (!m) return
+    if (start.current === null) start.current = clock.elapsedTime
+    // Lands just after the reward stream so the two don't compete.
+    const p = reducedMotion ? 1 : Math.min(1, Math.max(0, (clock.elapsedTime - start.current - 0.6) / FLIGHT))
+    m.visible = reducedMotion || clock.elapsedTime - start.current > 0.6
+    const e = 1 - Math.pow(1 - p, 2)
+    m.position.copy(path.curve.getPoint(e))
+    if (p < 1) {
+      // Flutter: side-to-side sway that calms as it nears the desk.
+      const calm = 1 - e
+      m.position.x += Math.sin(p * 18) * 0.12 * calm
+      m.rotation.set(Math.sin(p * 14) * 1.2 * calm - Math.PI / 2 * e, p * path.spin * 6, Math.cos(p * 11) * 0.9 * calm)
+    } else {
+      m.rotation.set(-Math.PI / 2, 0, path.restYaw)
+    }
+  })
+
+  return (
+    <mesh ref={ref} geometry={geo} castShadow visible={false}>
+      <meshStandardMaterial color={path.color} side={THREE.DoubleSide} roughness={0.75} />
+    </mesh>
+  )
+}
+
+/** A soft shaft of light through the window while Moss celebrates. */
+function SunBeam({ on }: { on: boolean }) {
+  const mat = useRef<THREE.MeshBasicMaterial>(null)
+  const geo = useMemo(() => {
+    // A tapered quad from the window down onto the desk, fading toward the floor end.
+    const g = new THREE.BufferGeometry()
+    const top = [WINDOW_POS.x - 0.9, WINDOW_POS.y + 0.8, WINDOW_POS.z + 0.05, WINDOW_POS.x + 0.9, WINDOW_POS.y + 0.8, WINDOW_POS.z + 0.05]
+    const bottom = [-0.6, 0.02, 0.9, 1.0, 0.02, 0.6]
+    g.setAttribute('position', new THREE.Float32BufferAttribute([...top, ...bottom], 3))
+    g.setAttribute('color', new THREE.Float32BufferAttribute([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], 3))
+    g.setIndex([0, 2, 1, 1, 2, 3])
+    return g
+  }, [])
+  useFrame((_, delta) => {
+    if (!mat.current) return
+    const target = on ? 0.22 : 0
+    mat.current.opacity += (target - mat.current.opacity) * (1 - Math.exp(-delta * 1.6))
+    mat.current.visible = mat.current.opacity > 0.005
+  })
+  return (
+    <mesh geometry={geo}>
+      <meshBasicMaterial
+        ref={mat}
+        color="#ffe2a6"
+        vertexColors
+        transparent
+        opacity={0}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+        toneMapped={false}
+      />
+    </mesh>
   )
 }
 

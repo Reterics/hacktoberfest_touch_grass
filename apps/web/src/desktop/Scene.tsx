@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import type { Dialogue, TimerPhase, UnlockId } from '@moss/shared'
 import type { MossVisualState } from '../lib/visualState.ts'
 import { MossModel } from './MossModel.tsx'
+import { DeskDressing } from './DeskDressing.tsx'
 import { codeScreenTexture, leafGeometry, rng, woodTexture } from './geometry.ts'
 
 export interface SceneProps {
@@ -54,6 +55,7 @@ function SceneContents({ visual, phase, level, health, unlocks, dialogue, reward
       <Laptop on={phase === 'focus'} />
       <Mug />
       <Notebook />
+      <DeskDressing reducedMotion={reducedMotion} />
       <DeskPlant big={has('desk_plant')} lush={has('ecosystem')} />
 
       <group position={[0, 0, 0.2]}>
@@ -728,7 +730,7 @@ function BlownLeaf({ seed, reducedMotion }: { seed: number; reducedMotion: boole
   )
 }
 
-/** A soft shaft of light through the window while Moss celebrates. */
+/** A faint shaft of window light, which brightens while Moss celebrates. */
 function SunBeam({ on }: { on: boolean }) {
   const mat = useRef<THREE.MeshBasicMaterial>(null)
   const geo = useMemo(() => {
@@ -743,7 +745,7 @@ function SunBeam({ on }: { on: boolean }) {
   }, [])
   useFrame((_, delta) => {
     if (!mat.current) return
-    const target = on ? 0.22 : 0
+    const target = on ? 0.22 : 0.06
     mat.current.opacity += (target - mat.current.opacity) * (1 - Math.exp(-delta * 1.6))
     mat.current.visible = mat.current.opacity > 0.005
   })

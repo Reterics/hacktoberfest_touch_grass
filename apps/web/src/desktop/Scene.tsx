@@ -122,7 +122,7 @@ function Lights({ phase, visual }: { phase: TimerPhase; visual: MossVisualState 
 
 function CameraRig({ phase, visual, reducedMotion }: { phase: TimerPhase; visual: MossVisualState; reducedMotion: boolean }) {
   const { camera, pointer } = useThree()
-  const look = useMemo(() => new THREE.Vector3(-0.1, 0.95, 0), [])
+  const look = useMemo(() => new THREE.Vector3(-0.1, 1.05, 0), [])
   const base = useMemo(() => new THREE.Vector3(3.4, 2.7, 5.4), [])
   const desired = useMemo(() => new THREE.Vector3(), [])
 
@@ -598,7 +598,7 @@ function RewardStream({ active, reducedMotion }: { active: boolean; reducedMotio
     return Array.from({ length: 60 }, () => ({ delay: r() * 0.8, arc: 0.6 + r() * 1.2, spread: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).multiplyScalar(0.8) }))
   }, [])
   const dummy = useMemo(() => new THREE.Object3D(), [])
-  const target = useMemo(() => new THREE.Vector3(0, 0.7, 0.2), [])
+  const target = useMemo(() => new THREE.Vector3(0, 0.6, 0.2), [])
   const [done, setDone] = useState(false)
 
   useFrame(({ clock }) => {
@@ -632,7 +632,7 @@ function RewardStream({ active, reducedMotion }: { active: boolean; reducedMotio
 
 function DialogueBubble({ text }: { text: string }) {
   return (
-    <Html position={[0, 1.5, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none', transform: 'translateY(-50%)' }}>
+    <Html position={[0, 2.15, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none', transform: 'translateY(-50%)' }}>
       <div className="animate-pop relative w-max max-w-[280px] rounded-2xl bg-parchment px-4 py-2.5 text-center font-display text-base leading-snug text-ink shadow-xl">
         {text}
         <div className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-parchment" />

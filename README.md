@@ -75,4 +75,4 @@ See `.env.example`: `OLLAMA_HOST`, `OLLAMA_TEXT_MODEL`, `OLLAMA_VISION_MODEL` (s
 
 ## Visuals
 
-The current Moss is a **procedural Three.js placeholder** behind a `VisualStateController` (`apps/web/src/lib/visualState.ts`). Game state maps deterministically to visual states, with priorities and minimum durations. The renderer reads only a visual profile, so it can be swapped for a GLB designed in Higgsfield without touching game logic. Higgsfield is design-time only, never runtime.
+Moss's canonical design, character sheet and asset pipeline are documented in [`visuals/README.md`](visuals/README.md). On the desktop, Moss is a faceless Meshy-generated GLB body with a live Three.js face and shader-driven fern fronds. On the phone, Moss is drawn from sprites cut out of the expression sheet. Game state maps deterministically to visual states through a `VisualStateController` (`apps/web/src/lib/visualState.ts`). Preview any state with `/?visual=<state>`. Higgsfield and Meshy are design-time only, never runtime.

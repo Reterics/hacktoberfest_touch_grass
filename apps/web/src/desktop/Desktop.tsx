@@ -3,7 +3,7 @@ import type { AIStatus, GameEvent, GameState, PairingInfo, Quest, ServerSnapshot
 import { UNLOCK_RULES, getPreset, xpToNextLevel } from '@moss/game-engine'
 import { getPairing, post, uploadPhoto, ApiError } from '../lib/api.ts'
 import { formatClock, useGame, useReducedMotion, useTicker } from '../lib/useGame.ts'
-import { useVisualState } from '../lib/visualState.ts'
+import { VISUAL_PROFILES, useVisualState, type MossVisualState } from '../lib/visualState.ts'
 import { prepareImage } from '../lib/image.ts'
 import { PhoneIcon, SparkIcon, STAT_LABEL, STAT_META } from '../components/icons.tsx'
 import { Scene } from './Scene.tsx'
@@ -11,7 +11,9 @@ import { Scene } from './Scene.tsx'
 export default function Desktop() {
   const { snapshot, connection, now, onEvent } = useGame()
   const reducedMotion = useReducedMotion()
-  const visual = useVisualState(snapshot?.state, onEvent)
+  const derived = useVisualState(snapshot?.state, onEvent)
+  // Design review: /?visual=tired forces a visual state.
+  const visual = forcedVisual ?? derived
   const [rewardKey, setRewardKey] = useState(0)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [rejection, setRejection] = useState<{ questId: string; reason: string; technical: boolean } | null>(null)
@@ -82,6 +84,10 @@ export default function Desktop() {
     </div>
   )
 }
+
+const forcedVisual = ((v) => (v && v in VISUAL_PROFILES ? (v as MossVisualState) : null))(
+  new URLSearchParams(window.location.search).get('visual'),
+)
 
 const pokeLines = ['Hey.', 'I am working too, you know.', 'Boop received.', 'That tickles.', 'Personal space. Please.', 'Hi!']
 

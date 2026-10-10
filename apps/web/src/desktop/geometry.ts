@@ -27,16 +27,6 @@ export function rng(seed: number): () => number {
   }
 }
 
-/** Cheap smooth 3D noise made from layered sines — plenty for organic lumps. */
-export function lumpNoise(x: number, y: number, z: number): number {
-  return (
-    Math.sin(x * 5.1 + y * 1.7) * 0.5 +
-    Math.sin(y * 6.3 + z * 2.9) * 0.35 +
-    Math.sin(z * 7.7 + x * 3.1) * 0.3 +
-    Math.sin((x + y + z) * 11.0) * 0.15
-  )
-}
-
 /** Wood grain texture generated on a canvas (no external image assets needed). */
 export function woodTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas')

@@ -24,7 +24,16 @@ Everything runs on your machine. Photos travel only over your local Wi-Fi, and n
 | ![Moss celebrating after the quest, with a new tiny tree on the desk and a sunbeam through the window](docs/images/quest-complete.webp) | ![End card: open innovation lets us combine what already exists to create what doesn't](docs/images/open-innovation.webp) |
 | **Reward:** local Gemma confirmed the tree; Moss recovers and the desk ecosystem grows. | **Why:** an AI companion designed to get you away from AI. |
 
-Watch the whole loop in about 90 seconds: run the app and open `/?demo=1` ([details below](#demo-moss-needs-a-tree)).
+**▶ Demo video:** [youtu.be/jfAM9tN1Dsg](https://youtu.be/jfAM9tN1Dsg) · **Code:** [github.com/Reterics/hacktoberfest_touch_grass](https://github.com/Reterics/hacktoberfest_touch_grass)
+
+Or watch the whole loop in about 90 seconds in the app itself: open `/?demo=1` ([details below](#demo-moss-needs-a-tree)).
+
+## Hacktoberfest Open-Source AI Challenge
+
+Built for the [Hacktoberfest Open-Source AI Challenge, Week 1: Touch Grass](https://dev.to/challenges/hacktoberfest-week1-2026-10-05). Prize categories:
+
+- **Best Use of Gemma:** Gemma 3 4B runs locally through Ollama and does all of Moss's runtime AI work. It writes the quest wording, checks the outdoor photo with vision, and writes Moss's reactions. Its output is schema-validated, and the deterministic game engine, not the model, decides XP and stats.
+- **Best Use of ElevenLabs:** all of the demo's audio comes from ElevenLabs: Moss's deadpan voice (v3), the narration, sound effects and the music bed. It was generated at design time and ships as local files, so the app still runs offline.
 
 ## Quick start
 
